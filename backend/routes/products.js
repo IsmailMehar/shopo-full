@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 
-// Read all products
+// This section reads all the products
 router.get("/", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM products ORDER BY id DESC");

@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 
-// Read cart
+// This section reads the cart
 router.get("/", async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -25,7 +25,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Add item(s) to cart
+// This section adds items to the cart
 router.post("/", async (req, res) => {
   try {
     const { product_id } = req.body;
@@ -71,7 +71,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Update cart quantity
+// This section updates the cart quantity
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -105,7 +105,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Remove cart item(s)
+// This section removes the cart items
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
