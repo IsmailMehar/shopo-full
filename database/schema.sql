@@ -3,6 +3,16 @@ USE shopo;
 
 DROP TABLE IF EXISTS cart_items;
 DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(120) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE products (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -17,10 +27,16 @@ CREATE TABLE products (
 
 CREATE TABLE cart_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  product_id INT NOT NULL UNIQUE,
+  user_id INT NOT NULL,
+  product_id INT NOT NULL,
   quantity INT NOT NULL DEFAULT 1,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_user_product (user_id, product_id)
 );
+
+INSERT INTO users (name, email, password_hash, role) VALUES
+('Admin User', 'admin@shopo.com', '$2a$10$KMwGg9EoI4Ptxnr3doD3vO5xCKuN5sz4H1V/fjJg8EMDxLPrjQlbC', 'admin');
 
 INSERT INTO products (name, category, price, stock, image_url, description) VALUES
 ('Wireless Mouse', 'Electronics', 25.99, 10, 'https://www.computeralliance.com.au/InventoryImages/45730.jpg', 'Compact wireless mouse for everyday use.'),
