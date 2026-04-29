@@ -1,19 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
+import Header from "./components/Header";
+import AuthForm from "./components/AuthForm";
 import FilterBar from "./components/FilterBar";
 import ProductCard from "./components/ProductCard";
 import CartPanel from "./components/CartPanel";
+import AdminPanel from "./components/AdminPanel";
 
 const API = "http://localhost:5000/api";
 
 export default function App() {
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("shopo_user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const [token, setToken] = useState(() => localStorage.getItem("shopo_token"));
+
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState([]);
-
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-
+  const [activeView, setActiveView] = useState("shop");
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const authHeaders = token
+    ? {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    : { "Content-Type": "application/json" };
 
   const showMessage = (text, type = "success") => {
     setMessage({ text, type });
@@ -24,30 +40,31 @@ export default function App() {
     const res = await fetch(`${API}/products`);
     const data = await res.json();
 
-    console.log("products response:", data);
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to load products.");
-    }
-
+    if (!res.ok) throw new Error(data.error || "Failed to load products.");
     setProducts(Array.isArray(data) ? data : []);
   };
 
   const fetchCart = async () => {
-    const res = await fetch(`${API}/cart`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to load cart.");
+    if (!token) {
+      setCartItems([]);
+      return;
     }
 
+    const res = await fetch(`${API}/cart`, {
+      headers: authHeaders
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Failed to load cart.");
     setCartItems(Array.isArray(data) ? data : []);
   };
 
-  const loadInitialData = async () => {
+  const loadAppData = async () => {
     try {
       setLoading(true);
-      await Promise.all([fetchProducts(), fetchCart()]);
+      await fetchProducts();
+      await fetchCart();
     } catch (err) {
       showMessage(err.message, "error");
     } finally {
@@ -56,22 +73,44 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    loadAppData();
+  }, [token]);
+
+  const handleAuthSuccess = ({ token, user }) => {
+    localStorage.setItem("shopo_token", token);
+    localStorage.setItem("shopo_user", JSON.stringify(user));
+    setToken(token);
+    setUser(user);
+    setActiveView("shop");
+    showMessage(`Welcome, ${user.name}.`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("shopo_token");
+    localStorage.removeItem("shopo_user");
+    setToken(null);
+    setUser(null);
+    setCartItems([]);
+    setActiveView("shop");
+    showMessage("Logged out successfully.");
+  };
 
   const handleAddToCart = async (productId) => {
+    if (!token) {
+      setActiveView("login");
+      showMessage("Please log in to add items to cart.", "error");
+      return;
+    }
+
     try {
       const res = await fetch(`${API}/cart`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify({ product_id: productId })
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to add item to cart.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to add item.");
 
       await fetchCart();
       showMessage("Item added to cart.");
@@ -86,15 +125,12 @@ export default function App() {
     try {
       const res = await fetch(`${API}/cart/${cartItemId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify({ quantity })
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to update cart item.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to update cart.");
 
       await fetchCart();
     } catch (err) {
@@ -105,14 +141,12 @@ export default function App() {
   const handleRemoveCartItem = async (cartItemId) => {
     try {
       const res = await fetch(`${API}/cart/${cartItemId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: authHeaders
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to remove cart item.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to remove item.");
 
       await fetchCart();
       showMessage("Item removed from cart.");
@@ -122,20 +156,13 @@ export default function App() {
   };
 
   const categories = useMemo(() => {
-    const safeProducts = Array.isArray(products) ? products : [];
-    return [...new Set(
-      safeProducts
-        .map((product) => product?.category)
-        .filter(Boolean)
-    )].sort();
+    return [...new Set(products.map((p) => p.category).filter(Boolean))].sort();
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    const safeProducts = Array.isArray(products) ? products : [];
-
-    return safeProducts.filter((product) => {
-      const name = product?.name ?? "";
-      const category = product?.category ?? "";
+    return products.filter((product) => {
+      const name = product.name || "";
+      const category = product.category || "";
 
       const matchesSearch =
         name.toLowerCase().includes(search.toLowerCase()) ||
@@ -148,68 +175,117 @@ export default function App() {
     });
   }, [products, search, selectedCategory]);
 
+  const cartCount = cartItems.reduce(
+    (sum, item) => sum + Number(item.quantity || 0),
+    0
+  );
+
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <div>
-          <h1>Shopo</h1>
-          <p className="subtitle">Your dynamic shopping cart</p>
-        </div>
-
-        <div className="topbar-badge">
-          Cart items: {cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0)}
-        </div>
-      </header>
+      <Header
+        user={user}
+        cartCount={cartCount}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        onLogout={handleLogout}
+      />
 
       {message.text && (
-        <div className={`message ${message.type === "error" ? "message-error" : "message-success"}`}>
+        <div
+          className={`message ${
+            message.type === "error" ? "message-error" : "message-success"
+          }`}
+        >
           {message.text}
         </div>
       )}
 
-      {loading ? (
-        <div className="loading-state">Loading application data...</div>
-      ) : (
-        <main className="main-layout">
-          <section className="content-column">
-            <FilterBar
-              search={search}
-              setSearch={setSearch}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              categories={categories}
-            />
+      {activeView === "login" && (
+        <AuthForm mode="login" onAuthSuccess={handleAuthSuccess} />
+      )}
 
-            <section className="panel">
-              <div className="panel-header">
-                <h2>Products</h2>
-                <span className="results-count">{filteredProducts.length} shown</span>
-              </div>
+      {activeView === "register" && (
+        <AuthForm mode="register" onAuthSuccess={handleAuthSuccess} />
+      )}
 
-              {filteredProducts.length === 0 ? (
-                <div className="empty-state">
-                  <p>No products match your current search or filter.</p>
-                </div>
-              ) : (
-                <div className="products-grid">
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onAddToCart={handleAddToCart}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+      {activeView === "admin" && user?.role === "admin" && (
+        <AdminPanel
+          token={token}
+          products={products}
+          refreshProducts={fetchProducts}
+          showMessage={showMessage}
+        />
+      )}
+
+      {activeView === "shop" && (
+        <>
+          <section className="hero">
+            <div>
+              <p className="eyebrow">Modern online shopping</p>
+              <h1>Browse products, build your cart, and shop faster.</h1>
+              <p>
+                Shopo is a single-page shopping cart application with secure login,
+                live product search, and a database-backed cart.
+              </p>
+            </div>
+
+            <div className="hero-card">
+              <span>Total products</span>
+              <strong>{products.length}</strong>
+              <span>Cart items</span>
+              <strong>{cartCount}</strong>
+            </div>
           </section>
 
-          <CartPanel
-            cartItems={cartItems}
-            onUpdateQuantity={handleUpdateCartQuantity}
-            onRemove={handleRemoveCartItem}
-          />
-        </main>
+          {loading ? (
+            <div className="loading-state">Loading products...</div>
+          ) : (
+            <main className="main-layout">
+              <section className="content-column">
+                <FilterBar
+                  search={search}
+                  setSearch={setSearch}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  categories={categories}
+                />
+
+                <section className="panel">
+                  <div className="panel-header">
+                    <div>
+                      <h2>Featured Products</h2>
+                      <p className="section-subtitle">
+                        {filteredProducts.length} products available
+                      </p>
+                    </div>
+                  </div>
+
+                  {filteredProducts.length === 0 ? (
+                    <div className="empty-state">
+                      <p>No products match your search or filter.</p>
+                    </div>
+                  ) : (
+                    <div className="products-grid">
+                      {filteredProducts.map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onAddToCart={handleAddToCart}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </section>
+
+              <CartPanel
+                cartItems={cartItems}
+                onUpdateQuantity={handleUpdateCartQuantity}
+                onRemove={handleRemoveCartItem}
+              />
+            </main>
+          )}
+        </>
       )}
     </div>
   );
