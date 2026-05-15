@@ -83,7 +83,7 @@ The application demonstrates full CRUD operations across three entities:
 * Create: register account
 * Read: login and admin user view
 * Update: handled through authentication lifecycle
-* Delete: optional (not required for assignment)
+* Delete: optional 
 
 ### 2. Products (Admin Only)
 
