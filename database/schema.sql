@@ -36,7 +36,7 @@ CREATE TABLE cart_items (
 );
 
 INSERT INTO users (name, email, password_hash, role) VALUES
-('Admin User', 'admin@shopo.com', '$2a$10$KMwGg9EoI4Ptxnr3doD3vO5xCKuN5sz4H1V/fjJg8EMDxLPrjQlbC', 'admin');
+('Admin User', 'admin@shopo.com', '$2b$10$BVrWT.Ycx8pzA1G15xDSvOM0HPy7Nb90101HNWzw7T1EIyvUT31wm', 'admin');
 
 INSERT INTO products (name, category, price, stock, image_url, description) VALUES
 ('Wireless Mouse', 'Electronics', 25.99, 10, 'https://www.computeralliance.com.au/InventoryImages/45730.jpg', 'Compact wireless mouse for everyday use.'),

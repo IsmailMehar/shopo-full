@@ -50,4 +50,52 @@ router.get("/users", authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Admin only: get all customers
+router.get("/customers", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        id,
+        name,
+        email,
+        role,
+        created_at
+      FROM users
+      ORDER BY created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch customers." });
+  }
+});
+
+// Admin only: get single customer's cart
+router.get("/customers/:id/cart", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query(`
+      SELECT
+        cart_items.id,
+        cart_items.quantity,
+        products.name,
+        products.price,
+        products.image_url,
+        products.category,
+        users.name AS user_name,
+        users.email AS user_email
+      FROM cart_items
+      JOIN users ON cart_items.user_id = users.id
+      JOIN products ON cart_items.product_id = products.id
+      WHERE users.id = ?
+      ORDER BY cart_items.id DESC
+    `, [id]);
+
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch customer cart." });
+  }
+});
+
 module.exports = router;
