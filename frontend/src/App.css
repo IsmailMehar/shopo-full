@@ -59,13 +59,19 @@ button {
   position: static;
   top: 0;
   z-index: 10;
+
   background: rgba(243, 246, 251, 0.88);
   backdrop-filter: blur(14px);
+
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 18px;
-  padding: 14px 0 22px;
+
+  padding: 14px 24px 22px;
+
+  margin-left: -24px;
+  margin-right: -24px;
   margin-bottom: 10px;
 }
 
@@ -360,10 +366,18 @@ button:focus {
   gap: 18px;
 }
 
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
 .product-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -429,13 +443,17 @@ button:focus {
 }
 
 .stock {
-  color: #15803d;
-  font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  white-space: nowrap;
 }
 
 .stock-out {
-  color: var(--danger);
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
 }
 
 .cart-panel {
@@ -627,12 +645,7 @@ button:focus {
 
   .cart-panel {
     position: static;
-  }
-
-  .site-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+  } 
 
   .nav-actions {
     justify-content: flex-start;
@@ -694,57 +707,142 @@ button:focus {
   }
 }
 
-.admin-cart-list {
-  display: grid;
-  gap: 14px;
-}
-
-.admin-user-cart {
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-}
-
-.admin-user-cart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.admin-user-cart-header h4 {
+.customers-layout {
   margin: 0;
 }
 
-.admin-user-cart-header p {
+.customer-card p {
   margin: 4px 0 0;
   color: var(--muted);
 }
 
-.admin-cart-items {
+.customer-role {
+  font-size: 12px;
+  background: var(--surface-soft);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.customer-cart-items {
+  display: grid;
+  gap: 12px;
+}
+
+.customer-cart-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--surface-soft);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.customer-cart-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.customer-cart-info h4 {
+  margin: 0;
+}
+
+.customer-cart-info p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.customer-cart-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .customers-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .customer-cart-item {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-cart-meta {
+    align-items: flex-start;
+  }
+}
+
+.customer-search {
+  margin-bottom: 16px;
+}
+
+.customer-search input {
+  width: 100%;
+}
+
+.customer-list-table {
   display: grid;
   gap: 8px;
 }
 
-.admin-cart-item {
+.customer-list-header,
+.customer-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 12px;
+  grid-template-columns: 1fr 1.5fr 120px;
+  gap: 16px;
   align-items: center;
+}
+
+.customer-list-header {
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.customer-row {
+  border: 1px solid var(--border);
   background: white;
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  text-align: left;
+}
+
+.customer-row:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.customer-row-active {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  gap: 12px;
 }
 
 @media (max-width: 700px) {
-  .admin-user-cart-header,
-  .admin-cart-item {
+  .customer-list-header {
+    display: none;
+  }
+
+  .customer-row {
     grid-template-columns: 1fr;
   }
 
-  .admin-user-cart-header {
+  .pagination {
     flex-direction: column;
   }
 }
